@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Photobooth</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 10px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        text-align: center;
+        color: #667eea;
+        margin-bottom: 15px;
+        font-size: 1.5em;
+      }
+
+      @media (min-width: 768px) {
+        body {
+          padding: 20px;
+        }
+
+        .container {
+          padding: 30px;
+        }
+
+        h1 {
+          font-size: 2em;
+          margin-bottom: 20px;
+        }
+      }
+
+      .step {
+        display: none;
+      }
+
+      .step.active {
+        display: block;
+      }
+
+      .upload-section {
+        text-align: center;
+        padding: 20px;
+        border: 3px dashed #667eea;
+        border-radius: 15px;
+        margin: 15px 0;
+        background: #f5f7ff;
+      }
+
+      .upload-section input[type="file"] {
+        display: none;
+      }
+
+      .upload-label {
+        display: inline-block;
+        padding: 12px 25px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s;
+      }
+
+      @media (min-width: 768px) {
+        .upload-section {
+          padding: 30px;
+          margin: 20px 0;
+        }
+
+        .upload-label {
+          padding: 15px 30px;
+          font-size: 16px;
+        }
+      }
+
+      .upload-label:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      .template-preview-container {
+        margin-top: 20px;
+        text-align: center;
+      }
+
+      .template-preview-container img {
+        max-width: 100%;
+        max-height: 500px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      .camera-container {
+        position: relative;
+        width: 100%;
+        max-width: 640px;
+        margin: 0 auto 20px;
+        border-radius: 15px;
+        overflow: hidden;
+        background: #000;
+      }
+
+      #video {
+        width: 100%;
+        display: block;
+        transform: scaleX(-1);
+      }
+
+      #canvas,
+      #finalCanvas {
+        display: none;
+      }
+
+      .controls {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin: 20px 0;
+      }
+
+      button {
+        padding: 12px 20px;
+        font-size: 14px;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      @media (min-width: 768px) {
+        button {
+          padding: 15px 30px;
+          font-size: 16px;
+          letter-spacing: 1px;
+        }
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-secondary {
+        background: #f0f0f0;
+        color: #333;
+      }
+
+      .btn-secondary:hover {
+        background: #e0e0e0;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .status {
+        text-align: center;
+        color: #666;
+        margin: 10px 0;
+        font-style: italic;
+      }
+
+      .countdown {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 80px;
+        color: white;
+        font-weight: bold;
+        text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        display: none;
+      }
+
+      @media (min-width: 768px) {
+        .countdown {
+          font-size: 100px;
+        }
+      }
+
+      .countdown.active {
+        display: block;
+      }
+
+      .photo-count {
+        text-align: center;
+        font-size: 18px;
+        color: #667eea;
+        font-weight: bold;
+        margin: 10px 0;
+      }
+
+      @media (min-width: 768px) {
+        .photo-count {
+          font-size: 20px;
+        }
+      }
+
+      .result-container {
+        text-align: center;
+      }
+
+      .result-image {
+        max-width: 100%;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        margin: 20px 0;
+      }
+
+      .flash {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.1s;
+        z-index: 9999;
+      }
+
+      .flash.active {
+        opacity: 0.8;
+      }
+
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      @media (min-width: 768px) {
+        .gallery {
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+          gap: 15px;
+          margin-top: 30px;
+        }
+      }
+
+      .gallery-item {
+        position: relative;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s;
+      }
+
+      .gallery-item:hover {
+        transform: scale(1.05);
+      }
+
+      .gallery-item img {
+        width: 100%;
+        display: block;
+      }
+
+      .gallery-actions {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        padding: 10px;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .gallery-item:hover .gallery-actions {
+        opacity: 1;
+      }
+
+      .gallery-actions button {
+        padding: 6px 12px;
+        font-size: 11px;
+        margin: 0 3px;
+      }
+
+      @media (min-width: 768px) {
+        .gallery-actions button {
+          padding: 8px 15px;
+          font-size: 12px;
+          margin: 0 5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="flash" id="flash"></div>
+
+    <div class="container">
+      <h1>📸 Photobooth</h1>
+
+      <!-- Step 1: Upload Template -->
+      <div class="step active" id="step1">
+        <h2 style="text-align: center; margin-bottom: 15px; font-size: 1.2em">
+          Upload Template Kamu
+        </h2>
+        <div class="upload-section">
+          <label for="templateUpload" class="upload-label">
+            📁 Pilih Gambar Template
+          </label>
+          <input
+            type="file"
+            id="templateUpload"
+            accept="image/*"
+            onchange="loadTemplate(event)"
+          />
+          <p style="margin-top: 15px; color: #666; font-size: 13px">
+            Upload gambar template photobooth kamu<br />(seperti yang ada 4
+            frame kosong)
+          </p>
+        </div>
+        <div class="template-preview-container" id="templatePreview"></div>
+        <div class="controls">
+          <button
+            class="btn-primary"
+            id="nextBtn"
+            onclick="startPhotoshoot()"
+            disabled
+          >
+            Lanjut ke Kamera
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Ambil Foto -->
+      <div class="step" id="step2">
+        <div class="camera-container">
+          <video id="video" autoplay playsinline></video>
+          <div class="countdown" id="countdown"></div>
+        </div>
+
+        <div class="photo-count" id="photoCount">Foto 0 / 4</div>
+        <div class="status" id="status">Klik "Ambil Foto" untuk memulai</div>
+
+        <div class="controls">
+          <button class="btn-primary" id="captureBtn" onclick="startCapture()">
+            📷 Ambil Foto
+          </button>
+          <button class="btn-secondary" onclick="cancelPhotoshoot()">
+            Batal
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Hasil -->
+      <div class="step" id="step3">
+        <h2 style="text-align: center; margin-bottom: 15px; font-size: 1.2em">
+          Hasil Foto
+        </h2>
+        <div class="result-container">
+          <img id="resultImage" class="result-image" src="" alt="Result" />
+        </div>
+        <div class="controls">
+          <button class="btn-primary" onclick="downloadResult()">
+            💾 Download
+          </button>
+          <button class="btn-secondary" onclick="resetPhotobooth()">
+            📸 Foto Lagi
+          </button>
+        </div>
+      </div>
+
+      <!-- Gallery -->
+      <div class="gallery" id="gallery"></div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+    <canvas id="finalCanvas"></canvas>
+
+    <script>
+      let video = document.getElementById("video");
+      let canvas = document.getElementById("canvas");
+      let finalCanvas = document.getElementById("finalCanvas");
+      let ctx = canvas.getContext("2d");
+      let finalCtx = finalCanvas.getContext("2d");
+      let stream = null;
+      let templateImage = null;
+      let capturedPhotos = [];
+      let savedPhotos = [];
+
+      function loadTemplate(event) {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            templateImage = new Image();
+            templateImage.onload = function () {
+              const preview = document.getElementById("templatePreview");
+              preview.innerHTML = `
+                            <p style="color: #667eea; font-weight: 600; margin-bottom: 10px;">✅ Template berhasil diupload!</p>
+                            <img src="${e.target.result}" alt="Template Preview">
+                        `;
+              document.getElementById("nextBtn").disabled = false;
+            };
+            templateImage.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+
+      async function startPhotoshoot() {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "user",
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          });
+          video.srcObject = stream;
+
+          document.getElementById("step1").classList.remove("active");
+          document.getElementById("step2").classList.add("active");
+
+          capturedPhotos = [];
+          updatePhotoCount();
+        } catch (err) {
+          console.error("Error accessing camera:", err);
+          alert(
+            "Tidak dapat mengakses kamera. Pastikan izin kamera sudah diberikan."
+          );
+        }
+      }
+
+      function startCapture() {
+        if (capturedPhotos.length >= 4) return;
+
+        document.getElementById("captureBtn").disabled = true;
+        let count = 3;
+        const countdownEl = document.getElementById("countdown");
+        countdownEl.classList.add("active");
+
+        const countInterval = setInterval(() => {
+          countdownEl.textContent = count;
+          count--;
+
+          if (count < 0) {
+            clearInterval(countInterval);
+            countdownEl.classList.remove("active");
+            capturePhoto();
+          }
+        }, 1000);
+      }
+
+      function capturePhoto() {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        const flash = document.getElementById("flash");
+        flash.classList.add("active");
+        setTimeout(() => flash.classList.remove("active"), 200);
+
+        const imageData = canvas.toDataURL("image/jpeg", 0.9);
+        capturedPhotos.push(imageData);
+
+        updatePhotoCount();
+
+        if (capturedPhotos.length >= 4) {
+          setTimeout(() => {
+            stopCamera();
+            generateFinalImage();
+          }, 500);
+        } else {
+          document.getElementById("captureBtn").disabled = false;
+        }
+      }
+
+      function updatePhotoCount() {
+        document.getElementById(
+          "photoCount"
+        ).textContent = `Foto ${capturedPhotos.length} / 4`;
+        if (capturedPhotos.length < 4) {
+          document.getElementById("status").textContent = `Ambil ${
+            4 - capturedPhotos.length
+          } foto lagi`;
+        } else {
+          document.getElementById("status").textContent =
+            "Foto lengkap! Membuat hasil...";
+        }
+      }
+
+      function generateFinalImage() {
+        // Set canvas size to match template
+        finalCanvas.width = templateImage.width;
+        finalCanvas.height = templateImage.height;
+
+        // Draw template background first
+        finalCtx.drawImage(templateImage, 0, 0);
+
+        // Calculate photo positions (adjust these values based on your template)
+        // These coordinates are for 4 equal frames stacked vertically
+        const templateWidth = templateImage.width;
+        const templateHeight = templateImage.height;
+
+        // Assuming 4 equal frames with some margin
+        const frameHeight = templateHeight / 4;
+        const photoWidth = templateWidth * 0.9; // 90% of width for margin
+        const photoHeight = frameHeight * 0.85; // 85% of frame height
+        const marginX = (templateWidth - photoWidth) / 2;
+        const marginY = frameHeight * 0.075; // 7.5% top margin for each frame
+
+        // Draw all 4 photos
+        let loadedCount = 0;
+        for (let i = 0; i < 4; i++) {
+          const img = new Image();
+          img.src = capturedPhotos[i];
+          img.onload = () => {
+            const yPos = i * frameHeight + marginY;
+
+            // Calculate aspect ratio to fit photo
+            const aspectRatio = img.width / img.height;
+            let drawWidth = photoWidth;
+            let drawHeight = photoHeight;
+
+            if (aspectRatio > photoWidth / photoHeight) {
+              drawHeight = photoWidth / aspectRatio;
+            } else {
+              drawWidth = photoHeight * aspectRatio;
+            }
+
+            const xOffset = marginX + (photoWidth - drawWidth) / 2;
+            const yOffset = yPos + (photoHeight - drawHeight) / 2;
+
+            finalCtx.drawImage(img, xOffset, yOffset, drawWidth, drawHeight);
+
+            loadedCount++;
+            if (loadedCount === 4) {
+              // All photos loaded, show result
+              const resultImage = finalCanvas.toDataURL("image/jpeg", 0.95);
+              document.getElementById("resultImage").src = resultImage;
+
+              // Save to gallery
+              savedPhotos.push({
+                id: Date.now(),
+                data: resultImage,
+              });
+              updateGallery();
+
+              document.getElementById("step2").classList.remove("active");
+              document.getElementById("step3").classList.add("active");
+            }
+          };
+        }
+      }
+
+      function stopCamera() {
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+          video.srcObject = null;
+        }
+      }
+
+      function downloadResult() {
+        const link = document.createElement("a");
+        link.href = document.getElementById("resultImage").src;
+        link.download = `photobooth_${Date.now()}.jpg`;
+        link.click();
+      }
+
+      function cancelPhotoshoot() {
+        stopCamera();
+        resetPhotobooth();
+      }
+
+      function resetPhotobooth() {
+        capturedPhotos = [];
+
+        document
+          .querySelectorAll(".step")
+          .forEach((step) => step.classList.remove("active"));
+        document.getElementById("step1").classList.add("active");
+      }
+
+      function updateGallery() {
+        const gallery = document.getElementById("gallery");
+        gallery.innerHTML =
+          '<h3 style="grid-column: 1/-1; text-align: center; color: #667eea;">Galeri Foto</h3>';
+
+        savedPhotos.reverse().forEach((photo) => {
+          const item = document.createElement("div");
+          item.className = "gallery-item";
+          item.innerHTML = `
+                    <img src="${photo.data}" alt="Photo">
+                    <div class="gallery-actions">
+                        <button class="btn-primary" onclick="downloadGalleryPhoto(${photo.id})">Download</button>
+                        <button class="btn-secondary" onclick="deleteGalleryPhoto(${photo.id})">Hapus</button>
+                    </div>
+                `;
+          gallery.appendChild(item);
+        });
+
+        savedPhotos.reverse();
+      }
+
+      function downloadGalleryPhoto(id) {
+        const photo = savedPhotos.find((p) => p.id === id);
+        if (photo) {
+          const link = document.createElement("a");
+          link.href = photo.data;
+          link.download = `photobooth_${id}.jpg`;
+          link.click();
+        }
+      }
+
+      function deleteGalleryPhoto(id) {
+        savedPhotos = savedPhotos.filter((p) => p.id !== id);
+        updateGallery();
+      }
+
+      window.addEventListener("beforeunload", () => {
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+        }
+      });
+    </script>
+  </body>
+</html>
